@@ -16,6 +16,7 @@
 | [OpenRouter](plugins/openrouter/README.md)                    | 对话、翻译、AI 词典、字幕断句，以及 Whisper/Qwen 语音识别、Gemini/Qwen 语音合成和 Jev 决策。 |
 | [千问 AI](plugins/qianwen/README.md)                         | 对话、翻译、AI 词典、字幕断句、带时间戳语音识别和图片全文识别。                              |
 | [SiliconFlow](plugins/siliconflow/README.md)                  | 对话、翻译、AI 词典、字幕断句、Qwen 和星辰语音识别、PaddleOCR 和 DeepSeek OCR 全文识别。     |
+| [PaddleOCR](plugins/paddleocr/README.md)                      | PP-OCR 文字识别（带文字行坐标）与 PP-StructureV3 / PaddleOCR-VL 文档解析。                   |
 
 全部官方插件的 API Key 均可留空，留空时不发送 Bearer 鉴权头。API 基础地址支持 HTTP/HTTPS，可指向协议兼容的局域网服务；这些功能需要支持 HTTP 和可选凭据的新版宿主，并升级已有服务实例。
 

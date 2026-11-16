@@ -1,0 +1,338 @@
+{
+  "id": "paddleocr",
+  "name": "PaddleOCR 官方 API",
+  "nameI18n": {
+    "zh": "PaddleOCR 官方 API",
+    "en": "PaddleOCR Official API",
+    "zh_TW": "PaddleOCR 官方 API",
+    "ja": "PaddleOCR 公式 API",
+    "ko": "PaddleOCR 공식 API",
+    "tr": "PaddleOCR Resmî API",
+    "vi": "API chính thức PaddleOCR",
+    "ru": "Официальный API PaddleOCR"
+  },
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "icon": "assets/logo.png",
+  "description": "PaddleOCR 官方异步 API：PP-OCR 文字识别（含文字行坐标）与 PP-StructureV3 / PaddleOCR-VL 文档解析。",
+  "descriptionI18n": {
+    "zh": "PaddleOCR 官方异步 API：PP-OCR 文字识别（含文字行坐标）与 PP-StructureV3 / PaddleOCR-VL 文档解析。",
+    "en": "PaddleOCR official async API: PP-OCR text recognition with line boxes, and PP-StructureV3 / PaddleOCR-VL document parsing.",
+    "zh_TW": "PaddleOCR 官方非同步 API：PP-OCR 文字辨識（含文字行座標）與 PP-StructureV3 / PaddleOCR-VL 文件解析。",
+    "ja": "PaddleOCR 公式非同期 API：PP-OCR 文字認識（行座標付き）と PP-StructureV3 / PaddleOCR-VL 文書解析。",
+    "ko": "PaddleOCR 공식 비동기 API: 텍스트 줄 좌표가 포함된 PP-OCR 인식과 PP-StructureV3 / PaddleOCR-VL 문서 분석.",
+    "tr": "PaddleOCR resmî eşzamansız API: metin satırı koordinatlı PP-OCR tanıma ve PP-StructureV3 / PaddleOCR-VL belge ayrıştırma.",
+    "vi": "API bất đồng bộ chính thức của PaddleOCR: nhận dạng văn bản PP-OCR kèm tọa độ dòng, và phân tích tài liệu PP-StructureV3 / PaddleOCR-VL.",
+    "ru": "Официальный асинхронный API PaddleOCR: распознавание текста PP-OCR с координатами строк и разбор документов PP-StructureV3 / PaddleOCR-VL."
+  },
+  "permissions": {
+    "network": ["https://paddleocr.aistudio-app.com"],
+    "endpointFields": ["resultOrigin"]
+  },
+  "sharedSettings": [
+    {
+      "key": "apiKey",
+      "label": "AI Studio Access Token",
+      "type": "password",
+      "isSecret": true,
+      "required": true,
+      "labelI18n": {
+        "zh": "AI Studio Access Token",
+        "en": "AI Studio Access Token"
+      }
+    },
+    {
+      "key": "resultOrigin",
+      "label": "结果下载域名（可选）",
+      "type": "text",
+      "defaultValue": "https://paddleocr.bj.bcebos.com",
+      "labelI18n": {
+        "zh": "结果下载域名（可选）",
+        "en": "Result download origin (optional)",
+        "zh_TW": "結果下載網域（選填）",
+        "ja": "結果ダウンロード元（任意）",
+        "ko": "결과 다운로드 도메인 (선택)",
+        "tr": "Sonuç indirme kaynağı (isteğe bağlı)",
+        "vi": "Tên miền tải kết quả (tùy chọn)",
+        "ru": "Источник загрузки результата (необязательно)"
+      }
+    }
+  ],
+  "services": [
+    {
+      "id": "text-ocr",
+      "name": "文字识别（PaddleOCR）",
+      "nameI18n": {
+        "zh": "文字识别（PaddleOCR）",
+        "en": "Text OCR (PaddleOCR)",
+        "zh_TW": "文字辨識（PaddleOCR）",
+        "ja": "文字認識（PaddleOCR）",
+        "ko": "텍스트 인식 (PaddleOCR)",
+        "tr": "Metin OCR (PaddleOCR)",
+        "vi": "Nhận dạng văn bản (PaddleOCR)",
+        "ru": "Распознавание текста (PaddleOCR)"
+      },
+      "implementation": {
+        "kind": "script",
+        "entry": "services/paddleocr.js"
+      },
+      "capabilities": {
+        "recognizeText": {
+          "handler": "recognizeText",
+          "inputModalities": ["image"],
+          "outputModes": ["complete"],
+          "coordinates": true
+        }
+      },
+      "settings": [
+        {
+          "key": "model",
+          "label": "模型",
+          "type": "select",
+          "defaultValue": "PP-OCRv6",
+          "required": true,
+          "options": [
+            { "label": "PP-OCRv6（通用）", "value": "PP-OCRv6" },
+            { "label": "PP-OCRv5（通用）", "value": "PP-OCRv5" },
+            { "label": "PP-OCRv5-latin（拉丁文字）", "value": "PP-OCRv5-latin" }
+          ],
+          "labelI18n": {
+            "zh": "模型",
+            "en": "Model",
+            "zh_TW": "模型",
+            "ja": "モデル",
+            "ko": "모델",
+            "tr": "Model",
+            "vi": "Mô hình",
+            "ru": "Модель"
+          }
+        },
+        {
+          "key": "useDocOrientationClassify",
+          "label": "文档方向分类",
+          "type": "boolean",
+          "defaultValue": false,
+          "labelI18n": {
+            "zh": "文档方向分类",
+            "en": "Document orientation",
+            "zh_TW": "文件方向分類",
+            "ja": "文書方向分類",
+            "ko": "문서 방향 분류",
+            "tr": "Belge yönü sınıflandırma",
+            "vi": "Phân loại hướng tài liệu",
+            "ru": "Классификация ориентации документа"
+          }
+        },
+        {
+          "key": "useDocUnwarping",
+          "label": "文档矫正",
+          "type": "boolean",
+          "defaultValue": false,
+          "labelI18n": {
+            "zh": "文档矫正",
+            "en": "Document unwarping",
+            "zh_TW": "文件矯正",
+            "ja": "文書補正",
+            "ko": "문서 왜곡 보정",
+            "tr": "Belge düzeltme",
+            "vi": "Hiệu chỉnh tài liệu",
+            "ru": "Коррекция искажений документа"
+          }
+        },
+        {
+          "key": "useTextlineOrientation",
+          "label": "文本行方向分类",
+          "type": "boolean",
+          "defaultValue": false,
+          "labelI18n": {
+            "zh": "文本行方向分类",
+            "en": "Text line orientation",
+            "zh_TW": "文字行方向分類",
+            "ja": "テキスト行方向分類",
+            "ko": "텍스트 줄 방향 분류",
+            "tr": "Metin satırı yönü",
+            "vi": "Hướng dòng văn bản",
+            "ru": "Ориентация текстовой строки"
+          }
+        }
+      ],
+      "modelField": "model",
+      "models": [
+        { "id": "PP-OCRv6", "name": "PP-OCRv6" },
+        { "id": "PP-OCRv5", "name": "PP-OCRv5" },
+        { "id": "PP-OCRv5-latin", "name": "PP-OCRv5-latin" }
+      ]
+    },
+    {
+      "id": "doc-parsing",
+      "name": "文档解析（PaddleOCR）",
+      "nameI18n": {
+        "zh": "文档解析（PaddleOCR）",
+        "en": "Document parsing (PaddleOCR)",
+        "zh_TW": "文件解析（PaddleOCR）",
+        "ja": "文書解析（PaddleOCR）",
+        "ko": "문서 분석 (PaddleOCR)",
+        "tr": "Belge ayrıştırma (PaddleOCR)",
+        "vi": "Phân tích tài liệu (PaddleOCR)",
+        "ru": "Разбор документов (PaddleOCR)"
+      },
+      "implementation": {
+        "kind": "script",
+        "entry": "services/paddleocr.js"
+      },
+      "capabilities": {
+        "parseImage": {
+          "handler": "parseImage",
+          "inputModalities": ["image"],
+          "outputModes": ["complete"],
+          "taskModes": ["doc"],
+          "coordinates": false
+        }
+      },
+      "settings": [
+        {
+          "key": "model",
+          "label": "模型",
+          "type": "select",
+          "defaultValue": "PaddleOCR-VL-1.6",
+          "required": true,
+          "options": [
+            { "label": "PaddleOCR-VL-1.6", "value": "PaddleOCR-VL-1.6" },
+            { "label": "PaddleOCR-VL-1.5", "value": "PaddleOCR-VL-1.5" },
+            { "label": "PaddleOCR-VL", "value": "PaddleOCR-VL" },
+            { "label": "PP-StructureV3", "value": "PP-StructureV3" }
+          ],
+          "labelI18n": {
+            "zh": "模型",
+            "en": "Model",
+            "zh_TW": "模型",
+            "ja": "モデル",
+            "ko": "모델",
+            "tr": "Model",
+            "vi": "Mô hình",
+            "ru": "Модель"
+          }
+        },
+        {
+          "key": "useDocOrientationClassify",
+          "label": "文档方向分类",
+          "type": "boolean",
+          "defaultValue": false,
+          "labelI18n": {
+            "zh": "文档方向分类",
+            "en": "Document orientation",
+            "zh_TW": "文件方向分類",
+            "ja": "文書方向分類",
+            "ko": "문서 방향 분류",
+            "tr": "Belge yönü sınıflandırma",
+            "vi": "Phân loại hướng tài liệu",
+            "ru": "Классификация ориентации документа"
+          }
+        },
+        {
+          "key": "useDocUnwarping",
+          "label": "文档矫正",
+          "type": "boolean",
+          "defaultValue": false,
+          "labelI18n": {
+            "zh": "文档矫正",
+            "en": "Document unwarping",
+            "zh_TW": "文件矯正",
+            "ja": "文書補正",
+            "ko": "문서 왜곡 보정",
+            "tr": "Belge düzeltme",
+            "vi": "Hiệu chỉnh tài liệu",
+            "ru": "Коррекция искажений документа"
+          }
+        },
+        {
+          "key": "useChartRecognition",
+          "label": "图表识别",
+          "type": "boolean",
+          "defaultValue": false,
+          "labelI18n": {
+            "zh": "图表识别",
+            "en": "Chart recognition",
+            "zh_TW": "圖表辨識",
+            "ja": "グラフ認識",
+            "ko": "차트 인식",
+            "tr": "Grafik tanıma",
+            "vi": "Nhận dạng biểu đồ",
+            "ru": "Распознавание диаграмм"
+          }
+        },
+        {
+          "key": "useSealRecognition",
+          "label": "印章识别",
+          "type": "boolean",
+          "defaultValue": false,
+          "labelI18n": {
+            "zh": "印章识别",
+            "en": "Seal recognition",
+            "zh_TW": "印章辨識",
+            "ja": "印鑑認識",
+            "ko": "인장 인식",
+            "tr": "Mühür tanıma",
+            "vi": "Nhận dạng con dấu",
+            "ru": "Распознавание печатей"
+          }
+        },
+        {
+          "key": "useOcrForImageBlock",
+          "label": "图片内文字识别",
+          "type": "boolean",
+          "defaultValue": true,
+          "labelI18n": {
+            "zh": "图片内文字识别",
+            "en": "Text in images",
+            "zh_TW": "圖片內文字辨識",
+            "ja": "画像内文字認識",
+            "ko": "이미지 내 텍스트 인식",
+            "tr": "Görsel içi metin",
+            "vi": "Chữ trong ảnh",
+            "ru": "Текст на изображениях"
+          }
+        },
+        {
+          "key": "useTableRecognition",
+          "label": "表格识别（PP-StructureV3）",
+          "type": "boolean",
+          "defaultValue": true,
+          "labelI18n": {
+            "zh": "表格识别（PP-StructureV3）",
+            "en": "Table recognition (PP-StructureV3)",
+            "zh_TW": "表格辨識（PP-StructureV3）",
+            "ja": "テーブル認識（PP-StructureV3）",
+            "ko": "표 인식 (PP-StructureV3)",
+            "tr": "Tablo tanıma (PP-StructureV3)",
+            "vi": "Nhận dạng bảng (PP-StructureV3)",
+            "ru": "Распознавание таблиц (PP-StructureV3)"
+          }
+        },
+        {
+          "key": "useFormulaRecognition",
+          "label": "公式识别（PP-StructureV3）",
+          "type": "boolean",
+          "defaultValue": true,
+          "labelI18n": {
+            "zh": "公式识别（PP-StructureV3）",
+            "en": "Formula recognition (PP-StructureV3)",
+            "zh_TW": "公式辨識（PP-StructureV3）",
+            "ja": "数式認識（PP-StructureV3）",
+            "ko": "수식 인식 (PP-StructureV3)",
+            "tr": "Formül tanıma (PP-StructureV3)",
+            "vi": "Nhận dạng công thức (PP-StructureV3)",
+            "ru": "Распознавание формул (PP-StructureV3)"
+          }
+        }
+      ],
+      "modelField": "model",
+      "models": [
+        { "id": "PaddleOCR-VL-1.6", "name": "PaddleOCR-VL-1.6" },
+        { "id": "PaddleOCR-VL-1.5", "name": "PaddleOCR-VL-1.5" },
+        { "id": "PaddleOCR-VL", "name": "PaddleOCR-VL" },
+        { "id": "PP-StructureV3", "name": "PP-StructureV3" }
+      ]
+    }
+  ]
+}
