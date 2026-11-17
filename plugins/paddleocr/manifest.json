@@ -11,7 +11,7 @@
     "vi": "API chính thức PaddleOCR",
     "ru": "Официальный API PaddleOCR"
   },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "apiVersion": 1,
   "icon": "assets/logo.png",
   "description": "PaddleOCR 官方异步 API：PP-OCR 文字识别（含文字行坐标）与 PP-StructureV3 / PaddleOCR-VL 文档解析。",

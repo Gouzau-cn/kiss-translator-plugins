@@ -1,5 +1,17 @@
 # PaddleOCR 官方 API 验收记录
 
+## 1.0.1（2026-11-17）
+
+### 修复
+
+- 文档解析中无坐标的版面块（页眉、页脚、页码、脚注等缺少 `block_bbox`，或坐标面积为零的块）现在显式返回 `poly: null`。此前这类 item 省略了 `poly` 字段，宿主 `validateResult` 会以 `INVALID_RESPONSE: Invalid OCR blocks.` 拒绝整个文档解析结果；该缺陷已用 Sval 执行插件并调用真实宿主校验复现。
+- 新增两条断言：结果集中每个文字项必须自带 `poly` 字段；缺 bbox 与零面积 bbox 的版面块都返回 `poly: null`。
+
+### 验证
+
+- `npm run check`、`npm test`、`npm run build` 通过；离线协议测试使用假 HTTP 响应，仍未访问厂家接口。
+- 真实 AI Studio Token 验收项与 1.0.0 相同，仍待完成。
+
 ## 1.0.0（2026-11-16）
 
 ### 已验证

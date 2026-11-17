@@ -164,10 +164,16 @@ test("parseImage keeps layout blocks, headers and Markdown fallback pages", asyn
         [1, 40],
       ],
     },
-    { text: "页眉 2026", type: "header" },
+    { text: "页眉 2026", type: "header", poly: null },
     { text: "姓名 张&三", type: "table", poly: [[2, 60], [90, 60], [90, 80], [2, 80]] },
     { text: "第二页 Markdown", poly: null },
   ]);
+  // 宿主要求每个文字项显式声明 poly（多边形或 null），省略字段会被拒绝。
+  assert.ok(
+    result.items.every((item) =>
+      Object.prototype.hasOwnProperty.call(item, "poly")
+    )
+  );
 
   const payload = JSON.parse(calls[0].request.body.optionalPayload);
   assert.equal(calls[0].request.body.model, "PaddleOCR-VL-1.6");
@@ -175,6 +181,43 @@ test("parseImage keeps layout blocks, headers and Markdown fallback pages", asyn
   assert.equal(payload.useOcrForImageBlock, true);
   assert.equal(payload.returnMarkdownImages, false);
   assert.equal(payload.useTextlineOrientation, undefined);
+});
+
+test("layout blocks without a usable box declare poly null", async () => {
+  const page = {
+    layoutParsingResults: [
+      {
+        prunedResult: {
+          parsing_res_list: [
+            // 缺少 block_bbox 的页脚。
+            { block_label: "footer", block_content: "第 1 页" },
+            // 零面积的退化坐标也不能省略 poly。
+            {
+              block_label: "text",
+              block_content: "正文",
+              block_bbox: [5, 5, 5, 5],
+            },
+          ],
+        },
+      },
+    ],
+  };
+  const { ctx } = createContext([
+    () => response(JSON.stringify({ code: 0, data: { jobId: "job-box" } })),
+    () =>
+      response(
+        JSON.stringify({
+          code: 0,
+          data: { state: "done", resultUrl: { jsonUrl: JSON_URL } },
+        })
+      ),
+    () => response(JSON.stringify({ result: page })),
+  ]);
+  const result = await handlers.parseImage({ image: IMAGE }, {}, ctx);
+  assert.deepEqual(result.items, [
+    { text: "第 1 页", type: "footer", poly: null },
+    { text: "正文", type: "text", poly: null },
+  ]);
 });
 
 test("legacy PaddleOCR-VL does not receive 1.5-only payload fields", async () => {

@@ -363,13 +363,15 @@ function parseDocPages(pages) {
     texts.push(page.text);
     if (page.blocks.length) {
       for (var index = 0; index < page.blocks.length; index++) {
-        var item = {
+        // 宿主校验要求每个文字项的 poly 是有效多边形或显式 null；
+        // 缺 block_bbox 的页眉、页脚等版面块必须显式写 null，不能省略字段。
+        items.push({
           text: page.blocks[index].text,
           type: page.blocks[index].type,
-        };
-        if (hasArea(page.blocks[index].poly))
-          item.poly = page.blocks[index].poly;
-        items.push(item);
+          poly: hasArea(page.blocks[index].poly)
+            ? page.blocks[index].poly
+            : null,
+        });
       }
     } else {
       var lines = page.text.split(/\r?\n/);
