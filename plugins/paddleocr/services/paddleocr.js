@@ -4,8 +4,9 @@
 var JOB_URL = "https://paddleocr.aistudio-app.com/api/v2/ocr/jobs";
 var POLL_INITIAL_MS = 1500;
 var POLL_MAX_MS = 5000;
-// 宿主对插件调用的默认超时是 120 秒，这里预留下载与解析时间。
-var JOB_BUDGET_MS = 100000;
+// 宿主插件调用期限由实例的 httpTimeout 决定，最大 600 秒（10 分钟）。
+// 这里保留略低于上限的保险，避免宿主未能中止时无限轮询；默认 120 秒时由宿主先触发超时。
+var JOB_BUDGET_MS = 590000;
 var OCR_MODELS = ["PP-OCRv6", "PP-OCRv5", "PP-OCRv5-latin"];
 var DOC_MODELS = [
   "PaddleOCR-VL-1.6",
@@ -68,10 +69,12 @@ async function readJson(ctx, request) {
   return data.data;
 }
 
-async function reportProgress(ctx, message, progress) {
+// 进度只上报数值，不传 message：插件脚本没有文案本地化能力，
+// 代码串（如 PADDLEOCR_RUNNING）若被界面直接展示会不可读。
+async function reportProgress(ctx, progress) {
   if (!ctx.emit) return;
   try {
-    await ctx.emit({ type: "progress", message: message, progress: progress });
+    await ctx.emit({ type: "progress", progress: progress });
   } catch (error) {
     // 进度事件失败不应中断识别任务。
   }
@@ -118,7 +121,7 @@ async function runJob(ctx, input, model, optionalPayload) {
   });
   var jobId = submitted && submitted.jobId;
   if (!jobId) fail("INVALID_RESPONSE", "PaddleOCR 未返回任务 ID");
-  await reportProgress(ctx, "PADDLEOCR_SUBMITTED");
+  await reportProgress(ctx);
 
   var interval = POLL_INITIAL_MS;
   while (Date.now() < deadline) {
@@ -145,7 +148,6 @@ async function runJob(ctx, input, model, optionalPayload) {
     var extracted = extract ? Number(extract.extractedPages) : 0;
     await reportProgress(
       ctx,
-      "PADDLEOCR_" + String(state || "running").toUpperCase(),
       total > 0 ? Math.min(1, Math.max(0, extracted / total)) : undefined
     );
     var wait = Math.min(interval, Math.max(0, deadline - Date.now()));
@@ -153,7 +155,7 @@ async function runJob(ctx, input, model, optionalPayload) {
     await sleep(wait);
     interval = Math.min(Math.round(interval * 1.5), POLL_MAX_MS);
   }
-  fail("PROVIDER_TIMEOUT", "PaddleOCR 任务超时");
+  fail("REQUEST_TIMEOUT", "PaddleOCR 任务超时");
 }
 
 function isFlatBox(box) {
@@ -400,19 +402,23 @@ exports.parseImage = async function (input, config, ctx) {
   var payload = {
     useDocOrientationClassify: !!config.useDocOrientationClassify,
     useDocUnwarping: !!config.useDocUnwarping,
-    useLayoutDetection: true,
     useChartRecognition: !!config.useChartRecognition,
     // 只为翻译取文字，不需要回传版面图片。
     returnMarkdownImages: false,
   };
   if (model === "PP-StructureV3") {
+    // PP-StructureV3 固定包含版面分析，官方参数表没有 useLayoutDetection；
+    // 发送未声明参数可能被服务端拒绝，因此不发送。
     payload.useTableRecognition = config.useTableRecognition !== false;
     payload.useFormulaRecognition = config.useFormulaRecognition !== false;
     if (config.useSealRecognition) payload.useSealRecognition = true;
-  } else if (model !== "PaddleOCR-VL") {
-    // 1.5/1.6 才支持这两个参数，旧版 VL 不发送。
-    payload.useOcrForImageBlock = config.useOcrForImageBlock !== false;
-    if (config.useSealRecognition) payload.useSealRecognition = true;
+  } else {
+    payload.useLayoutDetection = true;
+    if (model !== "PaddleOCR-VL") {
+      // 1.5/1.6 才支持这两个参数，旧版 VL 不发送。
+      payload.useOcrForImageBlock = config.useOcrForImageBlock !== false;
+      if (config.useSealRecognition) payload.useSealRecognition = true;
+    }
   }
   var pages = await runJob(ctx, input, model, payload);
   return parseDocPages(pages);

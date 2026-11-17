@@ -253,6 +253,100 @@ test("legacy PaddleOCR-VL does not receive 1.5-only payload fields", async () =>
   assert.equal(payload.useSealRecognition, undefined);
 });
 
+test("done jobs without a result URL are rejected", async () => {
+  const { ctx } = createContext([
+    () => response(JSON.stringify({ code: 0, data: { jobId: "job-nourl" } })),
+    () => response(JSON.stringify({ code: 0, data: { state: "done" } })),
+  ]);
+  await assert.rejects(
+    handlers.recognizeText({ image: IMAGE }, {}, ctx),
+    (error) => error.code === "INVALID_RESPONSE"
+  );
+});
+
+test("invalid JSON responses are rejected before parsing", async () => {
+  const { ctx } = createContext([() => response("<html>bad gateway</html>")]);
+  await assert.rejects(
+    handlers.recognizeText({ image: IMAGE }, {}, ctx),
+    (error) => error.code === "INVALID_RESPONSE"
+  );
+});
+
+test("PP-StructureV3 omits the VL-only layout switch", async () => {
+  const { ctx, calls } = createContext([
+    () => response(JSON.stringify({ code: 0, data: { jobId: "job-struct" } })),
+    () =>
+      response(
+        JSON.stringify({
+          code: 0,
+          data: { state: "done", resultUrl: { jsonUrl: JSON_URL } },
+        })
+      ),
+    () =>
+      response(
+        JSON.stringify({
+          result: { layoutParsingResults: [{ markdown: { text: "ok" } }] },
+        })
+      ),
+  ]);
+  const result = await handlers.parseImage(
+    { image: IMAGE },
+    { model: "PP-StructureV3" },
+    ctx
+  );
+  const payload = JSON.parse(calls[0].request.body.optionalPayload);
+  assert.equal(result.text, "ok");
+  assert.equal(payload.useLayoutDetection, undefined);
+  assert.equal(payload.useTableRecognition, true);
+  assert.equal(payload.useFormulaRecognition, true);
+  assert.equal(payload.useSealRecognition, undefined);
+  assert.equal(payload.returnMarkdownImages, false);
+});
+
+test("polling emits progress without code-string messages", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const { ctx, calls } = createContext([
+    () => response(JSON.stringify({ code: 0, data: { jobId: "job-poll" } })),
+    () => response(JSON.stringify({ code: 0, data: { state: "pending" } })),
+    () =>
+      response(
+        JSON.stringify({
+          code: 0,
+          data: {
+            state: "running",
+            extractProgress: { totalPages: 4, extractedPages: 2 },
+          },
+        })
+      ),
+    () =>
+      response(
+        JSON.stringify({
+          code: 0,
+          data: { state: "done", resultUrl: { jsonUrl: JSON_URL } },
+        })
+      ),
+    () => response(JSON.stringify({ result: OCR_PAGE })),
+  ]);
+  let settled = false;
+  const promise = handlers
+    .recognizeText({ image: IMAGE }, {}, ctx)
+    .finally(() => {
+      settled = true;
+    });
+  // 交替推进微任务与假定时器，直到轮询完成。
+  for (let i = 0; i < 20 && !settled; i++) {
+    await new Promise((resolve) => setImmediate(resolve));
+    t.mock.timers.tick(5000);
+  }
+  const result = await promise;
+  assert.equal(result.text, "Hello\nWorld");
+  const events = calls.filter((call) => call.emit).map((call) => call.emit);
+  assert.ok(events.length >= 2);
+  assert.ok(events.every((event) => event.type === "progress"));
+  assert.ok(events.every((event) => event.message === undefined));
+  assert.ok(events.some((event) => event.progress === 0.5));
+});
+
 test("failed jobs and missing coordinates are reported", async () => {
   const failed = createContext([
     () => response(JSON.stringify({ code: 0, data: { jobId: "job-4" } })),

@@ -36,7 +36,7 @@ Document parsing reads `prunedResult.parsing_res_list` first: it contains header
 
 ## Limitations
 
-- Each invocation uses the host's plugin budget (120 seconds by default); the plugin's own job budget is 100 seconds and reports a timeout.
+- Each invocation uses the host's plugin budget (120 seconds by default, configurable and capped at 600 seconds); the plugin keeps only a 590-second safety limit, so the host normally times out first.
 - The result JSONL is served from a BOS pre-signed URL. The plugin allows the API origin and `https://paddleocr.bj.bcebos.com` by default and keeps a configurable "result download origin" field. Update it if the live service uses a different host. Redirects are rejected by the host, so the result URL must be a direct link.
 - Responses are limited to 8 MiB by the host; document parsing does not request Markdown images.
 - Markdown fallback pages have no coordinates, so image translation can only show their text.
